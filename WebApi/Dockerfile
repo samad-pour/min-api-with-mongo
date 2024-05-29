@@ -1,18 +1,19 @@
-# Multistage Dockerfile
-# Stage 1: Build the application
+# 1. Build compile image
+
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
-WORKDIR /app
-
-# Copy csproj and restore as distinct layers
-COPY *.csproj ./
+WORKDIR /build
+COPY . .
 RUN dotnet restore
-
-# Copy everything else and build
-COPY . ./
 RUN dotnet publish -c Release -o out
 
-# Stage 2: Run the application
+# 2. Build runtime image
+
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
+LABEL description="Minimal API with MongoDB"
+LABEL organisation="GBS St. Gallen"
+LABEL author="Martin Früh"
 WORKDIR /app
-COPY --from=build-env /app/out .
+COPY --from=build-env /build/out .
+ENV ASPNETCORE_URLS=http://*:5001
+EXPOSE 5001
 ENTRYPOINT ["dotnet", "WebApi.dll"]
